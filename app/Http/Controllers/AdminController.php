@@ -12,10 +12,11 @@ class AdminController extends Controller
     public function index()
     {
         if (Auth::id()) {
-            $usertype = Auth()->user()->usertype; 
+            $usertype = Auth::user()->usertype; 
 
             if ($usertype == 'user') { 
-                return view('home.index');
+                $room = Room::all();
+                return view('home.index',compact('room'));
             } else if ($usertype == 'admin') { 
                 return view('admin.index');
             } else {
@@ -26,7 +27,8 @@ class AdminController extends Controller
 
     public function home()
     {
-        return view('home.index');
+        $room = Room::all();
+        return view('home.index', compact('room'));
     }
 
     public function create_room()
@@ -36,6 +38,14 @@ class AdminController extends Controller
 
     public function add_room(Request $request)  
     {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'price' => 'required|numeric',
+            'wifi' => 'required|boolean',
+            'type' => 'required|string|max:255',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
+        ]);
         
         $data = new Room;
         $data->room_title = $request->title;
@@ -77,5 +87,24 @@ class AdminController extends Controller
         $data = Room::find($id);
         return view('admin.update_room',compact('data'));
     }
+    public function edit_room(Request $request, $id)
+    {
+        $data = Room::find($id);
+        $data->room_title = $request->title;
+        $data->description = $request->description;
+        $data->price = $request->price;
+        $data->wifi = $request->wifi;
+        $data->room_type = $request->type;
+        $image = $request->image;
+        if ($image) {
+            $imagename = time() . '.' . $image->getClientOriginalExtension();
+            $request->image->move('uploads/rooms/', $imagename);
+            $data->image = $imagename;
+        }
+        $data->save();
+        return redirect()->back();
+    }
+    
 
-}
+    }
+
